@@ -1,5 +1,5 @@
-function log(message) {
-  console.log(message) // eslint-disable-line no-console
+function error(message) {
+  throw new Error(message)
 }
 
-log('test :)')
+error('test :)')

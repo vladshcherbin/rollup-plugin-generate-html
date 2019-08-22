@@ -7,11 +7,11 @@
       (function() {
         'use strict';
 
-        function log(message) {
-          console.log(message);
+        function error(message) {
+          throw new Error(message)
         }
 
-        log('test :)');
+        error('test :)');
 
       }());
 
