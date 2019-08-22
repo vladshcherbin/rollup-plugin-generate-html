@@ -41,7 +41,7 @@ export default function generateHtml(options = {}) {
           if (chunkInfo.isEntry) {
             scriptTags = `${scriptTags}<script>${chunkInfo.code}</script>`
 
-            delete bundle[chunkTitle]
+            delete bundle[chunkTitle] // eslint-disable-line no-param-reassign
           }
         })
       } else {
