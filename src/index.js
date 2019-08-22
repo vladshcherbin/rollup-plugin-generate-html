@@ -1,7 +1,7 @@
 import fs from 'fs-extra'
 import posthtml from 'posthtml'
 import insertAt from 'posthtml-insert-at'
-import beautify from 'posthtml-beautify'
+import { html as beautify } from 'js-beautify'
 
 const defaultTemplate = `
   <!doctype html>
@@ -15,12 +15,12 @@ const defaultTemplate = `
   </html>
 `
 
-// TODO filename option rename?
-// TODO inline
 export default function generateHtml(options = {}) {
   const {
     filename,
-    template
+    inline = false,
+    template,
+    selector = 'body'
   } = options
 
   if (!filename) {
@@ -29,34 +29,42 @@ export default function generateHtml(options = {}) {
 
   return {
     name: 'generate-html',
-    async writeBundle(bundle) {
-      // TODO rename variables
-      const html = template
+    async generateBundle(_, bundle) {
+      const templateHtml = template
         ? await fs.readFile(template, 'utf8')
         : defaultTemplate
 
-      let scriptsHtml = ''
+      let scriptTags = ''
 
-      Object.values(bundle).forEach((chunkInfo) => {
-        if (chunkInfo.isEntry) {
-          scriptsHtml = `${scriptsHtml}<script src="${chunkInfo.fileName}"></script>`
-        }
-      })
+      if (inline) {
+        Object.entries(bundle).forEach(([chunkTitle, chunkInfo]) => {
+          if (chunkInfo.isEntry) {
+            scriptTags = `${scriptTags}<script>${chunkInfo.code}</script>`
 
-      const processedHtml = await posthtml([
-        // TODO other plugins
-        scriptsHtml.length && insertAt({
-          selector: 'body',
-          append: scriptsHtml
-        }),
-        beautify({
-          rules: {
-            blankLines: false
+            delete bundle[chunkTitle]
           }
         })
-      ]).process(html)
+      } else {
+        Object.values(bundle).forEach((chunkInfo) => {
+          if (chunkInfo.isEntry) {
+            scriptTags = `${scriptTags}<script src="${chunkInfo.fileName}"></script>`
+          }
+        })
+      }
 
-      await fs.outputFile(filename, processedHtml.html)
+      const generatedHtml = await posthtml([
+        scriptTags.length && insertAt({
+          selector,
+          append: scriptTags
+        })
+      ]).process(templateHtml)
+
+      await fs.outputFile(filename, beautify(generatedHtml.html, {
+        end_with_newline: true,
+        extra_liners: [],
+        indent_inner_html: true,
+        indent_size: 2
+      }))
     }
   }
 }
