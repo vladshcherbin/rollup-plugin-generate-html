@@ -18,6 +18,7 @@ const defaultTemplate = `
 export default function generateHtml(options = {}) {
   const {
     filename,
+    formatInline = false,
     inline = false,
     template,
     selector = 'body'
@@ -60,10 +61,19 @@ export default function generateHtml(options = {}) {
       ]).process(templateHtml)
 
       await fs.outputFile(filename, beautify(generatedHtml.html, {
-        end_with_newline: true,
-        extra_liners: [],
-        indent_inner_html: true,
-        indent_size: 2
+        html: {
+          end_with_newline: true,
+          extra_liners: [],
+          indent_inner_html: true,
+          indent_size: 2,
+          content_unformatted: [!formatInline && 'script'],
+          css: {
+            end_with_newline: false
+          },
+          js: {
+            end_with_newline: false
+          }
+        }
       }))
     }
   }
